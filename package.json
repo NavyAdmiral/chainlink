@@ -13,6 +13,7 @@
     "watch": "NODE_ENV=test jest --watchAll --notify"
   },
   "dependencies": {
+    "brotli-gzip-webpack-plugin": "^0.5.0",
     "change-case": "^3.0.2",
     "formik": "^1.0.3",
     "linkToken": "github:smartcontractkit/linktoken",
