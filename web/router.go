@@ -165,6 +165,9 @@ func guiAssetRoutes(engine *gin.Engine) {
 				return
 			}
 
+			c.Writer.Header().Set("Content-Encoding", "gzip, br")
+			c.Writer.Header().Set("Accept-Encoding", "gzip, br")
+
 			http.ServeContent(c.Writer, c.Request, path, time.Time{}, file)
 		}
 	})
