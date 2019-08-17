@@ -7,6 +7,7 @@ import dashboardIndex, { IState as IDashboardState } from './dashboardIndex'
 import fetching from './fetching'
 import jobRuns, { IState as IJobRunsState } from './jobRuns'
 import jobs from './jobs'
+import earnings from './earnings'
 import notifications from './notifications'
 import redirect from './redirect'
 import transactions from './transactions'
@@ -27,6 +28,7 @@ const reducer = combineReducers({
   fetching,
   jobRuns,
   jobs,
+  earnings,
   transactions,
   notifications,
   redirect,

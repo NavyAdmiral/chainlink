@@ -328,6 +328,61 @@ func (orm *ORM) LinkEarnedFor(jobSpecID string) (*assets.Link, error) {
 	return earned, nil
 }
 
+// LinkEarnedForTimestamp shows the total link earnings for a job between
+// the two specified timestamps
+func (orm *ORM) LinkEarnedForTimestamp(jobSpecID string, start time.Time, end time.Time) (*assets.Link, error) {
+	var earned *assets.Link
+	err := orm.DB.Table("link_earned").
+		Where("job_spec_id = ?", jobSpecID).
+		Where("earned_at BETWEEN ? AND ?", start, end).
+		Select("earned").
+		Select("CAST(SUM(CAST(SUBSTR(earned, 1, 10) as BIGINT)) as varchar(255))").
+		Row().
+		Scan(&earned)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return earned, nil
+}
+
+// LinkEarnedForWeekly shows the total link earnings for a job
+func (orm *ORM) LinkEarnedForWeekly(jobSpecID string) (models.LinkEarnedWeekly, error) {
+	now := time.Now()
+	stampOneWeekAgo := now.AddDate(0, 0, 7)
+	stampTwoWeeksAgo := now.AddDate(0, 0, 14)
+	stampThreeWeeksAgo := now.AddDate(0, 0, 21)
+	stampFourWeeksAgo := now.AddDate(0, 0, 28)
+	inPastOneWeek, err1 := orm.LinkEarnedForTimestamp(jobSpecID, stampOneWeekAgo, now)
+	if err1 != nil {
+		fmt.Println(err1)
+		return models.LinkEarnedWeekly{}, err1
+	}
+	inPastTwoWeeks, err2 := orm.LinkEarnedForTimestamp(jobSpecID, stampTwoWeeksAgo, stampOneWeekAgo)
+	if err2 != nil {
+		fmt.Println(err2)
+		return models.LinkEarnedWeekly{}, err2
+	}
+	inPastThreWeeks, err3 := orm.LinkEarnedForTimestamp(jobSpecID, stampThreeWeeksAgo, stampTwoWeeksAgo)
+	if err3 != nil {
+		fmt.Println(err3)
+		return models.LinkEarnedWeekly{}, err3
+	}
+	inPastFourWeeks, err4 := orm.LinkEarnedForTimestamp(jobSpecID, stampFourWeeksAgo, stampThreeWeeksAgo)
+	if err4 != nil {
+		fmt.Println(err4)
+		return models.LinkEarnedWeekly{}, err4
+	}
+
+	return models.LinkEarnedWeekly{
+		JobSpecID:            jobSpecID,
+		EarnedPastOneWeek:    inPastOneWeek,
+		EarnedPastTwoWeeks:   inPastTwoWeeks,
+		EarnedPastThreeWeeks: inPastThreWeeks,
+		EarnedPastFourWeeks:  inPastFourWeeks,
+	}, nil
+}
+
 // CreateExternalInitiator inserts a new external initiator
 func (orm *ORM) CreateExternalInitiator(externalInitiator *models.ExternalInitiator) error {
 	return orm.DB.Create(externalInitiator).Error
@@ -923,6 +978,30 @@ func (orm *ORM) BridgeTypes(offset int, limit int) ([]models.BridgeType, int, er
 	var bridges []models.BridgeType
 	err = orm.getRecords(&bridges, "name asc", offset, limit)
 	return bridges, count, err
+}
+
+// ListEarnings returns all earnings limited by passed parameters.
+func (orm *ORM) ListEarnings(offset, limit int) ([]models.LinkEarned, int, error) {
+	count, err := orm.countOf(&models.LinkEarned{})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var ear []models.LinkEarned
+	err = orm.getRecords(&ear, "id desc", offset, limit)
+	return ear, count, err
+}
+
+// ShowEarnings returns the details of an individual LINK earnings.
+func (orm *ORM) ShowEarnings(offset, limit int) ([]models.LinkEarned, int, error) {
+	count, err := orm.countOf(&models.LinkEarned{})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var ear []models.LinkEarned
+	err = orm.getRecords(&ear, "id desc", offset, limit)
+	return ear, count, err
 }
 
 // SaveUser saves the user.

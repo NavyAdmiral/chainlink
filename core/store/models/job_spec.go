@@ -332,6 +332,20 @@ type LinkEarned struct {
 	EarnedAt  time.Time    `json:"earnedAt" gorm:"index"`
 }
 
+// LinkEarnedWeekly is to track Chainlink weekly earnings
+type LinkEarnedWeekly struct {
+	JobSpecID            string       `json:"id"`
+	EarnedPastOneWeek    *assets.Link `json:"earnedPastOneWeek"`
+	EarnedPastTwoWeeks   *assets.Link `json:"earnedPastTwoWeeks"`
+	EarnedPastThreeWeeks *assets.Link `json:"earnedPastThreeWeeks"`
+	EarnedPastFourWeeks  *assets.Link `json:"earnedPastFourWeeks"`
+}
+
+// GetID is used for jsonapi serialization
+func (l LinkEarnedWeekly) GetID() string {
+	return l.JobSpecID
+}
+
 // TableName will let us choose and use singular table name
 func (LinkEarned) TableName() string {
 	return "link_earned"

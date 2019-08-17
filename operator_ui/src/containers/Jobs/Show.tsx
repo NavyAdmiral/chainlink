@@ -26,6 +26,22 @@ import formatMinPayment from 'utils/formatWeiAsset'
 import { formatInitiators } from 'utils/jobSpecInitiators'
 import matchRouteAndMapDispatchToProps from 'utils/matchRouteAndMapDispatchToProps'
 import RegionalNav from './RegionalNav'
+import { IJobRuns, IJobSpec } from '../../../@types/operator_ui'
+import { fetchJob, fetchJobEarningActivity, fetchJobRuns } from '../../actions'
+import { JobSpecRunsOpts } from '../../api'
+import Content from '../../components/Content'
+import JobRunsList from '../../components/JobRuns/List'
+import TaskList from '../../components/Jobs/TaskList'
+import { IState } from '../../connectors/redux/reducers'
+import jobSelector from '../../selectors/job'
+import jobRunsByJobIdSelector from '../../selectors/jobRunsByJobId'
+import jobsShowRunCountSelector from '../../selectors/jobsShowRunCount'
+import { GWEI_PER_TOKEN } from '../../utils/constants'
+import { formatInitiators } from '../../utils/jobSpecInitiators'
+import matchRouteAndMapDispatchToProps from '../../utils/matchRouteAndMapDispatchToProps'
+import RegionalNav from './RegionalNav'
+import formatMinPayment from '../../utils/formatWeiAsset'
+import { ResponsiveContainer, AreaChart, Area } from 'recharts'
 
 const renderJobSpec = (job: IJobSpec, recentRunsCount: number) => {
   const info = {
@@ -81,21 +97,59 @@ const chartCardStyles = (theme: Theme) =>
 
 interface ChartProps extends WithStyles<typeof chartCardStyles> {
   job: IJobSpec
+  earnings?: Array<object>
+  fetchEarnings: (id: string) => Promise<any>
 }
 
-const ChartArea = withStyles(chartCardStyles)(
-  ({ classes, job }: ChartProps) => (
-    <Card>
-      <Grid item className={classes.wrapper}>
-        <Typography className={classes.paymentText} variant="h5">
-          Link Payment
-        </Typography>
-        <Typography className={classes.earnedText}>
-          {totalLinkEarned(job)}
-        </Typography>
-      </Grid>
-    </Card>
+const data = [
+  { pv: 2400 },
+  { pv: 2210 },
+  { pv: 2290 },
+  { pv: 2000 },
+  { pv: 2181 },
+  { pv: 2500 },
+  { pv: 2100 }
+]
+
+const Graph = ({ earnings }: { earnings?: Array<object> }) => {
+  console.log(earnings)
+  return (
+    <ResponsiveContainer width="100%" height={120.5}>
+      <AreaChart margin={{ top: 0, left: 0, bottom: 0, right: 0 }} data={data}>
+        <Area
+          type="monotone"
+          dataKey="pv"
+          stroke="#007bff"
+          fill="rgba(0, 123, 255, 0.1)"
+          strokeWidth={3}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
   )
+}
+
+const Earnings = withStyles(chartCardStyles)(
+  useHooks(({ classes, job, earnings, fetchEarnings }: ChartProps) => {
+    const monthAgo = new Date()
+    monthAgo.setMonth(monthAgo.getMonth() - 1)
+    const isMonthOld = +monthAgo > +new Date(job.createdAt)
+    useEffect(() => {
+      if (isMonthOld) fetchEarnings(job.id)
+    }, [])
+    return (
+      <Card>
+        <Grid item className={classes.wrapper}>
+          <Typography className={classes.paymentText} variant="h5">
+            Link Payment
+          </Typography>
+          <Typography className={classes.earnedText}>
+            {totalLinkEarned(job)}
+          </Typography>
+        </Grid>
+        {isMonthOld && <Graph earnings={earnings} />}
+      </Card>
+    )
+  })
 )
 
 const RecentJobRuns = ({
@@ -123,13 +177,17 @@ interface IDetailsProps {
   recentRunsCount: number
   job?: IJobSpec
   showJobRunsCount: number
+  fetchEarnings: (id: string) => Promise<any>
+  earnings?: Array<object>
 }
 
 const Details = ({
   job,
+  earnings,
   recentRuns,
   recentRunsCount,
-  showJobRunsCount
+  showJobRunsCount,
+  fetchEarnings
 }: IDetailsProps) => {
   if (job) {
     return (
@@ -145,7 +203,11 @@ const Details = ({
         <Grid item xs={4}>
           <Grid container direction="column">
             <Grid item xs>
-              <ChartArea job={job} />
+              <Earnings
+                job={job}
+                earnings={earnings}
+                fetchEarnings={fetchEarnings}
+              />
             </Grid>
             <Grid item xs>
               {renderTaskRuns(job)}
@@ -165,10 +227,12 @@ const Details = ({
 interface IProps {
   jobSpecId: string
   job?: IJobSpec
+  earnings?: Array<object>
   recentRuns: IJobRuns
   recentRunsCount: number
   showJobRunsCount: number
   fetchJob: (id: string) => Promise<any>
+  fetchJobEarningActivity: (opts: string) => Promise<any>
   fetchJobRuns: (opts: JobSpecRunsOpts) => Promise<any>
 }
 
@@ -179,12 +243,15 @@ export const Show = useHooks(
   ({
     jobSpecId,
     job,
+    earnings,
     fetchJob,
     fetchJobRuns,
+    fetchJobEarningActivity,
     recentRunsCount,
     recentRuns = [],
     showJobRunsCount = 2
   }: IProps) => {
+    console.log(earnings)
     useEffect(() => {
       document.title = 'Show Job'
       fetchJob(jobSpecId)
@@ -193,7 +260,7 @@ export const Show = useHooks(
         page: DEFAULT_PAGE,
         size: RECENT_RUNS_COUNT
       })
-    }, [])
+    }, [jobSpecId])
     return (
       <div>
         {/* TODO: Regional nav should handle job = undefined */}
@@ -204,6 +271,8 @@ export const Show = useHooks(
             recentRuns={recentRuns}
             recentRunsCount={recentRunsCount}
             showJobRunsCount={showJobRunsCount}
+            fetchEarnings={fetchJobEarningActivity}
+            earnings={earnings}
           />
         </Content>
       </div>
@@ -235,7 +304,11 @@ const mapStateToProps = (
 
 export const ConnectedShow = connect(
   mapStateToProps,
-  matchRouteAndMapDispatchToProps({ fetchJob, fetchJobRuns })
+  matchRouteAndMapDispatchToProps({
+    fetchJob,
+    fetchJobEarningActivity,
+    fetchJobRuns
+  })
 )(Show)
 
 export default ConnectedShow

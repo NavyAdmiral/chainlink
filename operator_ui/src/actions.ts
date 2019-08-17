@@ -337,6 +337,14 @@ export const fetchJob = (id: string) =>
     id
   )
 
+export const fetchJobEarningActivity = (id: string) =>
+  request(
+    'JOB_EARNING',
+    api.getJobEarningActivity,
+    (json: object) => normalize(json, { camelizeKeys: false }),
+    id
+  )
+
 export const fetchJobRuns = (opts: api.JobSpecRunsOpts) =>
   request(
     'JOB_RUNS',

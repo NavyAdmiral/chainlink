@@ -94,7 +94,10 @@ export const getJobs = (page: number, size: number) =>
 export const getRecentlyCreatedJobs = (size: number) =>
   get('/v2/specs', { size: size, sort: '-createdAt' })
 
-export const getJobSpec = (id: string) => get(`/v2/specs/${id}`)
+export const getJobSpec = (id: string) => {
+  console.log(get(`/v2/specs/${id}`))
+  return get(`/v2/specs/${id}`)
+}
 
 export const getRecentJobRuns = (size: number) =>
   get(`/v2/runs`, { sort: '-createdAt', size: size })
@@ -123,6 +126,8 @@ export const getJobSpecRuns = ({
 export const getJobSpecRun = (id: string) => get(`/v2/runs/${id}`)
 
 export const getAccountBalance = () => get('/v2/user/balances')
+
+export const getJobEarningActivity = (id: string) => get(`/v2/earnings/${id}`)
 
 export const getConfiguration = () => get('/v2/config')
 

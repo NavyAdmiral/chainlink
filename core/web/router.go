@@ -299,6 +299,9 @@ func v2Routes(app services.Application, r *gin.RouterGroup) {
 		authv2.GET("/transactions", paginatedRequest(txs.Index))
 		authv2.GET("/transactions/:TxHash", txs.Show)
 
+		earns := EarningsController{app}
+		authv2.GET("/earnings/:SpecID", earns.Show)
+
 		bdc := BulkDeletesController{app}
 		authv2.DELETE("/bulk_delete_runs", bdc.Delete)
 	}
